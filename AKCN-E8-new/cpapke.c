@@ -108,10 +108,10 @@ void cpapke_keypair(unsigned char* pk,
     randombytes(z, SYMBYTES);
     shake256(z, 2 * SYMBYTES, z, SYMBYTES);
 
-    gen_a(&ahat, publicseed);
+    gen_a(&ahat, publicseed); // ntt形式
 
     poly_invntt(&ahat);
-    poly_ntt(&ahat);
+    poly_ntt(&ahat); // 相当于乘 R
 
     poly_sample(&shat, noiseseed, 0);
     poly_ntt(&shat);
@@ -119,11 +119,11 @@ void cpapke_keypair(unsigned char* pk,
     poly_sample(&ehat, noiseseed, 1);
     poly_ntt(&ehat);
 
-    poly_basemul(&ahat_shat, &shat, &ahat);
+    poly_basemul(&ahat_shat, &shat, &ahat); // 恰好消掉 R
     poly_add(&bhat, &ehat, &ahat_shat);
 
-    poly_tobytes(sk, &shat);
-    encode_pk(pk, &bhat, publicseed);
+    poly_tobytes(sk, &shat); // ntt形式
+    encode_pk(pk, &bhat, publicseed); // ntt形式
 }
 
 /*************************************************
@@ -164,11 +164,11 @@ void cpapke_enc(unsigned char* c,
     // poly_ntt(&eprime);
 
     poly_basemul(&uhat, &ahat, &sprime);
-    poly_invntt(&uhat); //
+    poly_invntt(&uhat); // 正好消掉base里的R^{-1}
     poly_add(&uhat, &uhat, &eprime);
 
     poly_basemul(&vprime, &bhat, &sprime);
-    poly_invntt(&vprime);
+    poly_invntt(&vprime); // 正好消掉base里的R^{-1}
 
     poly_add(&vprime, &vprime, &eprimeprime);
     poly_add(&vprime, &vprime, &v); // add message
@@ -197,9 +197,9 @@ void cpapke_dec(unsigned char* m,
     poly_frombytes(&shat, sk);
     decode_c(&uhat, &vprime, c);
 
-    poly_ntt(&uhat); //
+    poly_ntt(&uhat);
     poly_basemul(&tmp, &shat, &uhat);
-    poly_invntt(&tmp);
+    poly_invntt(&tmp); // 正好消掉base里的R^{-1}
 
     poly_sub(&tmp, &tmp, &vprime);
 
