@@ -64,21 +64,55 @@ void poly_basemul(poly* c, const poly* a, const poly* b)
     }
 }
 
-void poly_sample(poly* r, const unsigned char* seed, unsigned char nonce)
+void poly_sample_3(poly* r, const unsigned char* seed, unsigned char nonce)
 {
     int i;
     unsigned char a, b;
-    unsigned char extseed[SYMBYTES + 1], buf[N];
+    unsigned char extseed[SYMBYTES + 1], buf[3 * N / 4];
     for (i = 0; i < SYMBYTES; i++)
         extseed[i] = seed[i];
     extseed[SYMBYTES] = nonce;
-    shake256(buf, N, extseed, SYMBYTES + 1);
+    shake256(buf, 3 * N / 4, extseed, SYMBYTES + 1);
 
-    for (i = 0; i < N; i++)
+    for (i = 0; i < N / 4; i++)
     {
-        a = ((buf[i] >> 0) & 1) + ((buf[i] >> 1) & 1) + ((buf[i] >> 2) & 1) + ((buf[i] >> 3) & 1);
-        b = ((buf[i] >> 4) & 1) + ((buf[i] >> 5) & 1) + ((buf[i] >> 6) & 1) + ((buf[i] >> 7) & 1);
-        r->coeffs[i] = a + Q - b;
+        a = ((buf[3*i] >> 0) & 1) + ((buf[3*i] >> 1) & 1) + ((buf[3*i] >> 2) & 1);
+        b = ((buf[3*i] >> 3) & 1) + ((buf[3*i] >> 4) & 1) + ((buf[3*i] >> 5) & 1);
+        r->coeffs[4*i+0] = a + Q - b;
+
+        a = ((buf[3*i]   >> 6) & 1) + ((buf[3*i]   >> 7) & 1) + ((buf[3*i+1] >> 0) & 1);
+        b = ((buf[3*i+1] >> 1) & 1) + ((buf[3*i+1] >> 2) & 1) + ((buf[3*i+1] >> 3) & 1);
+        r->coeffs[4*i+1] = a + Q - b;
+
+        a = ((buf[3*i+1] >> 4) & 1) + ((buf[3*i+1] >> 5) & 1) + ((buf[3*i+1] >> 6) & 1);
+        b = ((buf[3*i+1] >> 7) & 1) + ((buf[3*i+2] >> 0) & 1) + ((buf[3*i+2] >> 1) & 1);
+        r->coeffs[4*i+2] = a + Q - b;
+
+        a = ((buf[3*i+2] >> 2) & 1) + ((buf[3*i+2] >> 3) & 1) + ((buf[3*i+2] >> 4) & 1);
+        b = ((buf[3*i+2] >> 5) & 1) + ((buf[3*i+2] >> 6) & 1) + ((buf[3*i+2] >> 7) & 1);
+        r->coeffs[4*i+3] = a + Q - b;
+    }
+}
+
+void poly_sample_2(poly* r, const unsigned char* seed, unsigned char nonce)
+{
+    int i;
+    unsigned char a, b;
+    unsigned char extseed[SYMBYTES + 1], buf[N / 2];
+    for (i = 0; i < SYMBYTES; i++)
+        extseed[i] = seed[i];
+    extseed[SYMBYTES] = nonce;
+    shake256(buf, N / 2, extseed, SYMBYTES + 1);
+
+    for (i = 0; i < N / 2; i++)
+    {
+        a = ((buf[i] >> 0) & 1) + ((buf[i] >> 1) & 1);
+        b = ((buf[i] >> 2) & 1) + ((buf[i] >> 3) & 1);
+        r->coeffs[2*i+0] = a + Q - b;
+
+        a = ((buf[i] >> 4) & 1) + ((buf[i] >> 5) & 1);
+        b = ((buf[i] >> 6) & 1) + ((buf[i] >> 7) & 1);
+        r->coeffs[2*i+1] = a + Q - b;
     }
 }
 
@@ -86,8 +120,8 @@ void poly_uniform(poly* a, const unsigned char* seed)
 {
     unsigned int ctr = 0;
 	uint16_t val;
-	uint64_t state[25];
-	unsigned char buf[13*SHAKE128_RATE];
+	uint64_t state[25]; // 块大小 1600 bit
+	unsigned char buf[13*SHAKE128_RATE]; // 取得足够大
 	unsigned char extseed[SYMBYTES + 1];
 	int i, j;
 
@@ -100,63 +134,88 @@ void poly_uniform(poly* a, const unsigned char* seed)
 	shake128_absorb(state, extseed, SYMBYTES+1);
     shake128_squeezeblocks(buf,13,state);
 
-	while (ctr < N &&j < 13*SHAKE128_RATE)
+	while (ctr < N && j < 13*SHAKE128_RATE)
 	{
 		val = (buf[j] | ((uint16_t)buf[j + 1] << 8));
-		if (val < 8 * Q)
+		if (val < 16 * Q) // 2**(16 - logQ) * Q
 			a->coeffs[ctr++] = barrett_reduce(val);
 		j = j + 2;
 	}
 	while (ctr < N)
 	{
 		shake128_squeezeblocks(buf,1,state);
-		for (j=0;j <SHAKE128_RATE;j=j+2) 
+		for (j=0;j < SHAKE128_RATE;j=j+2) 
 		{
 			val = (buf[j] | ((uint16_t)buf[j + 1] << 8));
-			if (val < 8 * Q)	
+			if (val < 16 * Q)	
 				a->coeffs[ctr++] = barrett_reduce(val);		
 		 }
 	}
 }
 
+// void poly_frombytes(poly* r, const unsigned char* a)
+// {
+//     int i;
+//     for (i = 0; i < N / 8; i++)
+//     {
+//         r->coeffs[8*i+0] =  a[13*i+ 0]       | (((uint16_t)a[13*i+ 1] & 0x1f) << 8);
+//         r->coeffs[8*i+1] = (a[13*i+ 1] >> 5) | (((uint16_t)a[13*i+ 2]       ) << 3) | (((uint16_t)a[13*i+ 3] & 0x03) << 11);
+//         r->coeffs[8*i+2] = (a[13*i+ 3] >> 2) | (((uint16_t)a[13*i+ 4] & 0x7f) << 6);
+//         r->coeffs[8*i+3] = (a[13*i+ 4] >> 7) | (((uint16_t)a[13*i+ 5]       ) << 1) | (((uint16_t)a[13*i+ 6] & 0x0f) <<  9);
+//         r->coeffs[8*i+4] = (a[13*i+ 6] >> 4) | (((uint16_t)a[13*i+ 7]       ) << 4) | (((uint16_t)a[13*i+ 8] & 0x01) << 12);
+//         r->coeffs[8*i+5] = (a[13*i+ 8] >> 1) | (((uint16_t)a[13*i+ 9] & 0x3f) << 7);
+//         r->coeffs[8*i+6] = (a[13*i+ 9] >> 6) | (((uint16_t)a[13*i+10]       ) << 2) | (((uint16_t)a[13*i+11] & 0x07) << 10);
+//         r->coeffs[8*i+7] = (a[13*i+11] >> 3) | (((uint16_t)a[13*i+12]       ) << 5);
+//     }
+// }
+
+// void poly_tobytes(unsigned char* r, const poly* p)
+// {
+//     int i, j;
+//     uint16_t t[8];
+//     for (i = 0; i < N / 8; i++)
+//     {
+//         for(j=0;j<8;j++)
+//             t[j] = coeff_freeze(p->coeffs[8*i+j]);
+
+//         r[13*i+ 0] =  t[0]        & 0xff;
+//         r[13*i+ 1] = (t[0] >>  8) | ((t[1] & 0x07) << 5);
+//         r[13*i+ 2] = (t[1] >>  3) & 0xff;
+//         r[13*i+ 3] = (t[1] >> 11) | ((t[2] & 0x3f) << 2);
+//         r[13*i+ 4] = (t[2] >>  6) | ((t[3] & 0x01) << 7);
+//         r[13*i+ 5] = (t[3] >>  1) & 0xff;
+//         r[13*i+ 6] = (t[3] >>  9) | ((t[4] & 0x0f) << 4);
+//         r[13*i+ 7] = (t[4] >>  4) & 0xff;
+//         r[13*i+ 8] = (t[4] >> 12) | ((t[5] & 0x7f) << 1);
+//         r[13*i+ 9] = (t[5] >>  7) | ((t[6] & 0x03) << 6);
+//         r[13*i+10] = (t[6] >>  2) & 0xff;
+//         r[13*i+11] = (t[6] >> 10) | ((t[7] & 0x1f) << 3);
+//         r[13*i+12] = (t[7] >>  5);
+//     }
+// }
+
 void poly_frombytes(poly* r, const unsigned char* a)
 {
     int i;
-    for (i = 0; i < N / 8; i++)
+    for (i = 0; i < N / 2; i++)
     {
-        r->coeffs[8*i+0] =  a[13*i+ 0]       | (((uint16_t)a[13*i+ 1] & 0x1f) << 8);
-        r->coeffs[8*i+1] = (a[13*i+ 1] >> 5) | (((uint16_t)a[13*i+ 2]       ) << 3) | (((uint16_t)a[13*i+ 3] & 0x03) << 11);
-        r->coeffs[8*i+2] = (a[13*i+ 3] >> 2) | (((uint16_t)a[13*i+ 4] & 0x7f) << 6);
-        r->coeffs[8*i+3] = (a[13*i+ 4] >> 7) | (((uint16_t)a[13*i+ 5]       ) << 1) | (((uint16_t)a[13*i+ 6] & 0x0f) <<  9);
-        r->coeffs[8*i+4] = (a[13*i+ 6] >> 4) | (((uint16_t)a[13*i+ 7]       ) << 4) | (((uint16_t)a[13*i+ 8] & 0x01) << 12);
-        r->coeffs[8*i+5] = (a[13*i+ 8] >> 1) | (((uint16_t)a[13*i+ 9] & 0x3f) << 7);
-        r->coeffs[8*i+6] = (a[13*i+ 9] >> 6) | (((uint16_t)a[13*i+10]       ) << 2) | (((uint16_t)a[13*i+11] & 0x07) << 10);
-        r->coeffs[8*i+7] = (a[13*i+11] >> 3) | (((uint16_t)a[13*i+12]       ) << 5);
+        r->coeffs[2*i+0] = (a[3*i+0])      | (((uint16_t)a[3*i+1] & 0x0f) << 4);
+        r->coeffs[2*i+1] = (a[3*i+1] >> 4) | (((uint16_t)a[3*i+2]       ) << 4);
     }
 }
 
 void poly_tobytes(unsigned char* r, const poly* p)
 {
     int i, j;
-    uint16_t t[8];
-    for (i = 0; i < N / 8; i++)
+    uint16_t t[2];
+    for (i = 0; i < N / 2; i++)
     {
-        for(j=0;j<8;j++)
-            t[j] = coeff_freeze(p->coeffs[8*i+j]);
+        for(j=0;j<2;j++)
+            t[j] = coeff_freeze(p->coeffs[2*i+j]);
 
-        r[13*i+ 0] =  t[0]        & 0xff;
-        r[13*i+ 1] = (t[0] >>  8) | ((t[1] & 0x07) << 5);
-        r[13*i+ 2] = (t[1] >>  3) & 0xff;
-        r[13*i+ 3] = (t[1] >> 11) | ((t[2] & 0x3f) << 2);
-        r[13*i+ 4] = (t[2] >>  6) | ((t[3] & 0x01) << 7);
-        r[13*i+ 5] = (t[3] >>  1) & 0xff;
-        r[13*i+ 6] = (t[3] >>  9) | ((t[4] & 0x0f) << 4);
-        r[13*i+ 7] = (t[4] >>  4) & 0xff;
-        r[13*i+ 8] = (t[4] >> 12) | ((t[5] & 0x7f) << 1);
-        r[13*i+ 9] = (t[5] >>  7) | ((t[6] & 0x03) << 6);
-        r[13*i+10] = (t[6] >>  2) & 0xff;
-        r[13*i+11] = (t[6] >> 10) | ((t[7] & 0x1f) << 3);
-        r[13*i+12] = (t[7] >>  5);
+        r[3*i+0] = (t[0])      & 0xff;
+        r[3*i+1] = (t[0] >> 8) | ((t[1] & 0x0f) << 4);
+        r[3*i+2] = (t[1] >> 4);
     }
 }
 
