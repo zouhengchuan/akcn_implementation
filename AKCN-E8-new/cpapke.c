@@ -110,13 +110,25 @@ void cpapke_keypair(unsigned char* pk,
 
     gen_a(&ahat, publicseed); // ntt形式
 
+    // printf("a = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", ahat.coeffs[i]);
+    // }
+    // printf("]\n");
+
     poly_invntt(&ahat);
     poly_ntt(&ahat); // 相当于乘 R
 
-    poly_sample(&shat, noiseseed, 0);
+    poly_sample_2(&shat, noiseseed, 0);
     poly_ntt(&shat);
 
-    poly_sample(&ehat, noiseseed, 1);
+    // printf("sk = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", shat.coeffs[i]);
+    // }
+    // printf("]\n");
+
+    poly_sample_2(&ehat, noiseseed, 1);
     poly_ntt(&ehat);
 
     poly_basemul(&ahat_shat, &shat, &ahat); // 恰好消掉 R
@@ -124,6 +136,18 @@ void cpapke_keypair(unsigned char* pk,
 
     poly_tobytes(sk, &shat); // ntt形式
     encode_pk(pk, &bhat, publicseed); // ntt形式
+
+    // printf("pk = [");
+    // for (int i = 0; i < SYMBYTES; i++){
+    //     printf("%d, ", publicseed[i]);
+    // }
+    // printf("]\n");
+
+    // printf("b = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", bhat.coeffs[i]);
+    // }
+    // printf("]\n");
 }
 
 /*************************************************
@@ -153,12 +177,37 @@ void cpapke_enc(unsigned char* c,
     //     printf("%02X", m[i]);
     // printf("\n");
 
+    // printf("v = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", v.coeffs[i]);
+    // }
+    // printf("]\n");
+
     decode_pk(&bhat, publicseed, pk);
+
+    // printf("pk = [");
+    // for (int i = 0; i < SYMBYTES; i++){
+    //     printf("%d, ", publicseed[i]);
+    // }
+    // printf("]\n");
+
+    // printf("b = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", bhat.coeffs[i]);
+    // }
+    // printf("]\n");
+    
     gen_a(&ahat, publicseed);
 
-    poly_sample(&sprime, coin, 0);
-    poly_sample(&eprime, coin, 1);
-    poly_sample(&eprimeprime, coin, 2);
+    // printf("a = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", ahat.coeffs[i]);
+    // }
+    // printf("]\n");
+
+    poly_sample_2(&sprime, coin, 0);
+    poly_sample_2(&eprime, coin, 1);
+    poly_sample_2(&eprimeprime, coin, 2);
 
     poly_ntt(&sprime);
     // poly_ntt(&eprime);
@@ -195,6 +244,13 @@ void cpapke_dec(unsigned char* m,
     poly vprime, uhat, tmp, shat;
 
     poly_frombytes(&shat, sk);
+
+    // printf("sk = [");
+    // for (int i = 0; i < N; i++){
+    //     printf("%d, ", shat.coeffs[i]);
+    // }
+    // printf("]\n");
+
     decode_c(&uhat, &vprime, c);
 
     poly_ntt(&uhat);

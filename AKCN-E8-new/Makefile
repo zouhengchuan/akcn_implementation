@@ -17,4 +17,5 @@ speed768: $(HEADERS) $(SOURCES) cpucycles.h cpucycles.c speed_print.h speed_prin
 
 clean:
 	rm -rf PQCgenKAT_kem
+	rm -rf PQCkemKAT_2400.req
 	rm -rf speed768

@@ -1,41 +1,57 @@
-#include <stdint.h>
+#include <string.h>
+#include "api.h"
+#include "cpapke.h"
+#include "params.h"
+#include "rng.h"
+#include "fips202.h"
+#include "verify.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 #define Q 3457
-#define QINV 12929 // q^(-1) mod 2^16
 
-int16_t barrett_reduce(int16_t a)
+static uint16_t coeff_freeze(uint16_t x)
 {
-    int32_t t;
-    const int32_t v = (1U << 26) / Q + 1;
+    uint16_t m, r;
+    int16_t c;
+    r = x % Q;
 
-    t = v * a;
-    t >>= 26;
-    t *= Q;
-    return a - t;
-}
+    m = r - Q;
+    c = m;
+    c >>= 15;
+    r = m ^ ((r ^ m) & c);
 
-int16_t montgomery_reduce(int32_t a)
-{
-    int32_t t;
-    int16_t u;
-
-    u = a * QINV;
-    t = (int32_t)u * Q;
-    t = a - t;
-    t >>= 16;
-    return t;
+    return r;
 }
 
 int main()
 {
-    int32_t a;
-    for (int i = -Q*Q+1; i < Q*Q; i++){
-        a = (int32_t) i;
-        a = montgomery_reduce(a);
-        if (a < -1910 || a > 1910){
-            printf("a = %d, i = %d\n", a, i);
-        }
+    int16_t a[2] = {2156, 555};
+    printf("a0 = %02X\n", a[0]);
+    printf("a1 = %02X\n", a[1]);
+
+    uint16_t t[2];
+    unsigned char r[3];
+
+    t[0] = coeff_freeze(a[0]);
+    t[1] = coeff_freeze(a[1]);
+    printf("t0 = %02X\n", t[0]);
+    printf("t1 = %02X\n", t[1]);
+
+    r[0] = (t[0])      & 0xff;
+    r[1] = (t[0] >> 8) | ((t[1] & 0x0f) << 4);
+    r[2] = (t[1] >> 4);
+
+    for (int i = 0; i < 3; i++){
+        printf("r = %02X\n", r[i]);
     }
+
+    int16_t b[2];
+    b[0] = (r[0])      | (((uint16_t)r[1] & 0x0f) << 8);
+    b[1] = (r[1] >> 4) | (((uint16_t)r[2]       ) << 4);
+    printf("b0 = %02X\n", b[0]);
+    printf("b1 = %02X\n", b[1]);
+    
     return 0;
 }

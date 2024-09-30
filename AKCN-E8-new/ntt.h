@@ -13,9 +13,9 @@ void ntt(int16_t a[768]);
 void invntt(int16_t a[768]);
 //void ntt_pack(int16_t b[768], const int16_t a[768]);
 //void ntt_unpack(int16_t b[768], const int16_t a[768]);
-void basemul(int16_t c[3],
-    const int16_t a[3],
-    const int16_t b[3],
+void basemul(int16_t c[2],
+    const int16_t a[2],
+    const int16_t b[2],
     int16_t zeta);
 
 #endif

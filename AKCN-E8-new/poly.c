@@ -55,13 +55,16 @@ void poly_invntt(poly* a)
 void poly_basemul(poly* c, const poly* a, const poly* b)
 {
     unsigned int i;
-
+    int16_t t = zetas[0], s = fqmul(t,t);
     for (i = 0; i < N / 6; ++i) {
         basemul(c->coeffs + 6 * i, a->coeffs + 6 * i, b->coeffs + 6 * i,
             zetas[128 + i]);
-        basemul(c->coeffs + 6 * i + 3, a->coeffs + 6 * i + 3, b->coeffs + 6 * i + 3,
-            -zetas[128 + i]);
+        basemul(c->coeffs + 6 * i + 2, a->coeffs + 6 * i + 2, b->coeffs + 6 * i + 2,
+            fqmul(zetas[128 + i], t));
+        basemul(c->coeffs + 6 * i + 4, a->coeffs + 6 * i + 4, b->coeffs + 6 * i + 4,
+            fqmul(zetas[128 + i], s));
     }
+    poly_reduce(c);
 }
 
 void poly_sample_3(poly* r, const unsigned char* seed, unsigned char nonce)
@@ -199,7 +202,7 @@ void poly_frombytes(poly* r, const unsigned char* a)
     int i;
     for (i = 0; i < N / 2; i++)
     {
-        r->coeffs[2*i+0] = (a[3*i+0])      | (((uint16_t)a[3*i+1] & 0x0f) << 4);
+        r->coeffs[2*i+0] = (a[3*i+0])      | (((uint16_t)a[3*i+1] & 0x0f) << 8);
         r->coeffs[2*i+1] = (a[3*i+1] >> 4) | (((uint16_t)a[3*i+2]       ) << 4);
     }
 }
@@ -210,7 +213,7 @@ void poly_tobytes(unsigned char* r, const poly* p)
     uint16_t t[2];
     for (i = 0; i < N / 2; i++)
     {
-        for(j=0;j<2;j++)
+        for(j = 0; j < 2; j++)
             t[j] = coeff_freeze(p->coeffs[2*i+j]);
 
         r[3*i+0] = (t[0])      & 0xff;
@@ -414,7 +417,7 @@ void poly_tomsg(unsigned char *msg, const poly *x)
     msg[i] = 0;
   }
 
-  for(i = 0;i < 128;i++) {
+  for(i = 0;i < 64;i++) {
     uint32_t tmp_v[8];
     for (j = 0;j < 8;j++) {
       k = (i<<3) | j;

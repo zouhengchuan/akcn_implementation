@@ -11,6 +11,8 @@
 #include <ctype.h>
 #include "rng.h"
 #include "api.h"
+#include "poly.h"
+#include "print.h"
 
 #define	MAX_MARKER_LEN		50
 #define KAT_SUCCESS          0
@@ -22,9 +24,33 @@ int		FindMarker(FILE *infile, const char *marker);
 int		ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void	fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
 
+void schoolbook(poly* c, const poly* a, const poly* b);
+
 int
 main()
 {
+    // unsigned char    pk[CPAKEM_PUBLICKEYBYTES], sk[CPAKEM_SECRETKEYBYTES];
+    // unsigned char    ct[CPAKEM_CIPHERTEXTBYTES];
+    // unsigned char    z[SYMBYTES], buf[2 * SYMBYTES], buff[2 * SYMBYTES];
+
+    // cpapke_keypair(pk, sk);
+
+    // randombytes(buf, SYMBYTES);
+    // shake256(buf, 2 * SYMBYTES, buf, SYMBYTES);
+    // for (int i = 0; i < SYMBYTES; i++)
+    //     printf("%02X", buf[i]);
+    // printf("\n");
+
+    // cpapke_enc(ct, buf, pk, z);
+
+    // cpapke_dec(buff, ct, sk);
+    
+    // for (int i = 0; i < SYMBYTES; i++)
+    //     printf("%02X", buff[i]);
+    // printf("\n");
+
+
+
     char                fn_req[32], fn_rsp[32];
     FILE                *fp_req, *fp_rsp;
     unsigned char       seed[48];
@@ -111,6 +137,7 @@ main()
 
         if ( memcmp(ss, ss1, CRYPTO_BYTES) ) {
             printf("crypto_kem_dec returned bad 'ss' value\n");
+            fprintBstr(fp_rsp, "ss1 = ", ss1, CRYPTO_BYTES);
             return KAT_CRYPTO_FAILURE;
         }
 
@@ -119,7 +146,67 @@ main()
     fclose(fp_req);
     fclose(fp_rsp);
 
+    printf("sueeess!!!");
     return KAT_SUCCESS;
+
+    
+    
+    
+    // ntt is true
+    // poly ahat, bhat, chat, c_school;
+
+    // unsigned char z[2 * SYMBYTES];
+    // unsigned char* seed = z;
+    // unsigned char* seed2 = z + SYMBYTES;
+
+    // for (int i = 0; i < 9; i++){
+    //     randombytes(z, 2 * SYMBYTES);
+    // }
+
+    // // ahat.coeffs[0] = 2010;
+    // // for (int i = 1; i < N; i++){
+    // //     ahat.coeffs[i] = 2000;
+    // // }
+    // // ahat.coeffs[2 * 1] = 1;
+    // // ahat.coeffs[2 * 1 + 1] = 1;
+    // poly_uniform(&ahat, seed);
+    // poly_reduce(&ahat);
+
+    // // bhat.coeffs[0] = 1;
+    // // for (int i = 1; i < N; i++){
+    // //     bhat.coeffs[i] = 1;
+    // // }
+    // poly_uniform(&bhat, seed2);
+    // poly_reduce(&bhat);
+    // print_poly_all(&bhat, "b");
+
+    // schoolbook(&c_school, &ahat, &bhat);
+    // print_poly_all(&c_school,"c_school");
+    // poly_ntt(&c_school);
+    // print_poly_all(&c_school,"ntt c_school");
+
+    // poly_ntt(&ahat);
+    // print_poly_all(&ahat,"ntt_a");
+
+    // poly_ntt(&bhat);
+    // print_poly_all(&bhat,"ntt_b");
+
+    // poly_basemul(&chat, &ahat, &bhat);
+    // print_poly_all(&chat,"ntt_a * ntt_b");
+    // poly_invntt(&chat);
+    // poly_reduce(&chat);
+
+    // print_poly_all(&chat,"chat");
+    // poly_ntt(&chat);
+    // print_poly_all(&chat,"ntt chat");
+
+    // for (int i = 0; i < N; i++){
+    //     if (c_school.coeffs[i] != chat.coeffs[i]){
+    //         printf("fail in i = %d\n", i);
+    //         return;
+    //     };
+    // }
+    // printf("success\n");
 }
 
 
@@ -228,4 +315,33 @@ fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L)
 		fprintf(fp, "00");
 
 	fprintf(fp, "\n");
+}
+
+
+void
+schoolbook(poly* c, const poly* a, const poly* b)
+{
+    int16_t temp;
+    for (int i = 0; i < N; i++){
+        c -> coeffs[i] = 0;
+    }
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < N; j++){
+            if (i + j < N){
+                temp = fqmul(a -> coeffs[i], b -> coeffs[j]);
+                temp = fqmul(temp, 867);
+                c -> coeffs[i + j] = barrett_reduce(c -> coeffs[i + j] + temp);
+            }else if (i + j < 3 * N / 2){
+                temp = fqmul(a -> coeffs[i], b -> coeffs[j]);
+                temp = fqmul(temp, 867);
+                c -> coeffs[i + j - N] = barrett_reduce(c -> coeffs[i + j - N] - temp);
+                c -> coeffs[i + j - N / 2] = barrett_reduce(c -> coeffs[i + j - N / 2] + temp);
+            }else{
+                temp = fqmul(a -> coeffs[i], b -> coeffs[j]);
+                temp = fqmul(temp, 867);
+                c -> coeffs[i + j - 3 * N / 2] = barrett_reduce(c -> coeffs[i + j - 3 * N / 2] - temp);
+            } 
+        }
+    }
+    poly_reduce(c);
 }

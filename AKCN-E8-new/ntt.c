@@ -45,16 +45,16 @@ static void ntt_384(int16_t a[384]) {
 		zeta = zetas[k++];
 		for (j = start; j < start + 48; ++j) {
 			t = fqmul(zeta, a[j + 48]);
-            a[j + 48] = (a[j] - t);
-			a[j] = (a[j] + t);
+            a[j + 48] = barrett_reduce(a[j] - t);
+			a[j] = barrett_reduce(a[j] + t);
 		}
 	}
     for (start = 0; start < 384; start = j + 24) {
 		zeta = zetas[k++];
 		for (j = start; j < start + 24; ++j) {
 			t = fqmul(zeta, a[j + 24]);
-            a[j + 24] = (a[j] - t);
-			a[j] = (a[j] + t);
+            a[j + 24] = barrett_reduce(a[j] - t);
+			a[j] = barrett_reduce(a[j] + t);
 		}
 	}
     for (start = 0; start < 384; start = j + 12) {
@@ -69,16 +69,16 @@ static void ntt_384(int16_t a[384]) {
 		zeta = zetas[k++];
 		for (j = start; j < start + 6; ++j) {
 			t = fqmul(zeta, a[j + 6]);
-            a[j + 6] = (a[j] - t);
-			a[j] = (a[j] + t);
+            a[j + 6] = barrett_reduce(a[j] - t);
+			a[j] = barrett_reduce(a[j] + t);
 		}
 	}
     for (start = 0; start < 384; start = j + 3) {
 		zeta = zetas[k++];
 		for (j = start; j < start + 3; ++j) {
 			t = fqmul(zeta, a[j + 3]);
-            a[j + 3] = (a[j] - t);
-			a[j] = (a[j] + t);
+            a[j + 3] = barrett_reduce(a[j] - t);
+			a[j] = barrett_reduce(a[j] + t);
 		}
 	}
     for (start = 0; start < 384; start = j + 2) {

@@ -19,7 +19,8 @@ void poly_ntt(poly* a);
 void poly_invntt(poly* a);
 void poly_basemul(poly* c, const poly* a, const poly* b);
 
-void poly_sample(poly* r, const unsigned char* seed, unsigned char nonce);
+void poly_sample_2(poly* r, const unsigned char* seed, unsigned char nonce);
+void poly_sample_3(poly* r, const unsigned char* seed, unsigned char nonce);
 void poly_uniform(poly* a, const unsigned char* seed);
 
 void poly_frombytes(poly* r, const unsigned char* a);

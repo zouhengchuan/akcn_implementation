@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MONT 3310 // 2^16 % Q (2775)
+#define MONT 3310 // 2^16 % Q (-1:2775)
 #define QINV 12929 // q^(-1) mod 2^16
 
 int16_t montgomery_reduce(int32_t a);
