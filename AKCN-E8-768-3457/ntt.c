@@ -22,7 +22,7 @@ void basemul(int16_t c[2],
 
 /********TFNTT_ntt********/
 static void ntt_384(int16_t a[384]) {
-	unsigned int start, j, k;
+	unsigned int start, j, k, len;
 	int16_t t, t_1, s, s_1, zeta, rho = zetas[0];
 
 	for (j = 0; j < 192; ++j) {
@@ -33,55 +33,21 @@ static void ntt_384(int16_t a[384]) {
 
 	k = 2;
 
-    for (start = 0; start < 384; start = j + 96) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 96; ++j) {
-			t = fqmul(zeta, a[j + 96]);
-			a[j + 96] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
+	for (len = 96; len >= 3; len >>= 1)
+	{
+		for (start = 0; start < 384; start = j + len)
+		{
+			zeta = zetas[k++];
+			for (j = start; j < start + len; ++j)
+				{
+					t = fqmul(zeta, a[j + len]);
+					a[j + len] = (a[j] - t);
+					a[j] = (a[j] + t);
+				}
 		}
 	}
-    for (start = 0; start < 384; start = j + 48) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 48; ++j) {
-			t = fqmul(zeta, a[j + 48]);
-            a[j + 48] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
-		}
-	}
-    for (start = 0; start < 384; start = j + 24) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 24; ++j) {
-			t = fqmul(zeta, a[j + 24]);
-            a[j + 24] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
-		}
-	}
-    for (start = 0; start < 384; start = j + 12) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 12; ++j) {
-			t = fqmul(zeta, a[j + 12]);
-			a[j + 12] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
-		}
-	}
-    for (start = 0; start < 384; start = j + 6) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 6; ++j) {
-			t = fqmul(zeta, a[j + 6]);
-            a[j + 6] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
-		}
-	}
-    for (start = 0; start < 384; start = j + 3) {
-		zeta = zetas[k++];
-		for (j = start; j < start + 3; ++j) {
-			t = fqmul(zeta, a[j + 3]);
-            a[j + 3] = barrett_reduce(a[j] - t);
-			a[j] = barrett_reduce(a[j] + t);
-		}
-	}
-    for (start = 0; start < 384; start = j + 2) {
+
+    for (start = 0; start < 384; start += 3) {
 		zeta = zetas[k++];
 		for (j = start; j < start + 1; ++j) {
 			t = fqmul(zeta, a[j + 1]);

@@ -116,7 +116,7 @@ void cpapke_keypair(unsigned char* pk,
     poly_sample_2(&shat, noiseseed, 0);
     poly_ntt(&shat);
 
-    poly_sample_2(&ehat, noiseseed, 1);
+    poly_sample_3(&ehat, noiseseed, 1);
     poly_ntt(&ehat);
 
     poly_basemul(&ahat_shat, &shat, &ahat); // 恰好消掉 R
@@ -154,8 +154,8 @@ void cpapke_enc(unsigned char* c,
     gen_a(&ahat, publicseed);
 
     poly_sample_2(&sprime, coin, 0);
-    poly_sample_2(&eprime, coin, 1);
-    poly_sample_2(&eprimeprime, coin, 2);
+    poly_sample_3(&eprime, coin, 1);
+    poly_sample_3(&eprimeprime, coin, 2);
 
     poly_ntt(&sprime);
 
