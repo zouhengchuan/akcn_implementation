@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-extern int16_t zetas[256];
+extern int16_t zetas[384];
 extern int16_t zetas_inv[256];
 extern int16_t zetas_exp[1084];
 extern int16_t zetas_inv_exp[1084];

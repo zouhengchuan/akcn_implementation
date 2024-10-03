@@ -42,13 +42,13 @@ void poly_sub(poly* r, const poly* a, const poly* b)
 
 void poly_ntt(poly* a)
 {
-    poly_reduce(a);
+    // poly_reduce(a);
     ntt(a->coeffs);
 }
 
 void poly_invntt(poly* a)
 {
-    poly_reduce(a);
+    // poly_reduce(a);
     invntt(a->coeffs);
 }
 
@@ -58,11 +58,11 @@ void poly_basemul(poly* c, const poly* a, const poly* b)
     int16_t t = zetas[0], s = fqmul(t,t);
     for (i = 0; i < N / 6; ++i) {
         basemul(c->coeffs + 6 * i, a->coeffs + 6 * i, b->coeffs + 6 * i,
-            zetas[128 + i]);
+            zetas[128 + 2 * i]);
         basemul(c->coeffs + 6 * i + 2, a->coeffs + 6 * i + 2, b->coeffs + 6 * i + 2,
-            fqmul(zetas[128 + i], t));
+            fqmul(zetas[128 + 2 * i], t));
         basemul(c->coeffs + 6 * i + 4, a->coeffs + 6 * i + 4, b->coeffs + 6 * i + 4,
-            fqmul(zetas[128 + i], s));
+            fqmul(zetas[128 + 2 * i], s));
     }
     poly_reduce(c);
 }
