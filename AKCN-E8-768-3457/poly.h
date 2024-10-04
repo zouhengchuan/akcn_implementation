@@ -14,6 +14,7 @@ void poly_reduce(poly* a);
 //
 void poly_add(poly* c, const poly* a, const poly* b);
 void poly_sub(poly* r, const poly* a, const poly* b);
+void poly_tomont(poly *a);
 
 void poly_ntt(poly* a);
 void poly_invntt(poly* a);

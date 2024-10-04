@@ -110,8 +110,8 @@ void cpapke_keypair(unsigned char* pk,
 
     gen_a(&ahat, publicseed); // ntt形式
 
-    poly_invntt(&ahat);
-    poly_ntt(&ahat); // 相当于乘 R
+    // poly_invntt(&ahat);
+    // poly_ntt(&ahat); // 相当于乘 R
 
     poly_sample_2(&shat, noiseseed, 0);
     poly_ntt(&shat);
@@ -119,6 +119,7 @@ void cpapke_keypair(unsigned char* pk,
     poly_sample_3(&ehat, noiseseed, 1);
     poly_ntt(&ehat);
 
+    poly_tomont(&ahat);
     poly_basemul(&ahat_shat, &shat, &ahat); // 恰好消掉 R
     poly_add(&bhat, &ehat, &ahat_shat);
 

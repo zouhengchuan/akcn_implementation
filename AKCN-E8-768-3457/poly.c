@@ -40,6 +40,13 @@ void poly_sub(poly* r, const poly* a, const poly* b)
         r->coeffs[i] = (a->coeffs[i] - b->coeffs[i] + 4 * Q) % Q;
 }
 
+void poly_tomont(poly *a)
+{
+const int16_t t = (MONT * MONT) % Q;
+for (int i = 0; i < N; ++i)
+    a->coeffs[i] = fqmul(a->coeffs[i], t);
+}
+
 void poly_ntt(poly* a)
 {
     // poly_reduce(a);
@@ -55,16 +62,11 @@ void poly_invntt(poly* a)
 void poly_basemul(poly* c, const poly* a, const poly* b)
 {
     unsigned int i;
-    int16_t t = zetas[0], s = fqmul(t,t);
-    for (i = 0; i < N / 6; ++i) {
-        basemul(c->coeffs + 6 * i, a->coeffs + 6 * i, b->coeffs + 6 * i,
-            zetas[128 + 2 * i]);
-        basemul(c->coeffs + 6 * i + 2, a->coeffs + 6 * i + 2, b->coeffs + 6 * i + 2,
-            fqmul(zetas[128 + 2 * i], t));
-        basemul(c->coeffs + 6 * i + 4, a->coeffs + 6 * i + 4, b->coeffs + 6 * i + 4,
-            fqmul(zetas[128 + 2 * i], s));
+    for (i = 0; i < N / 2; ++i) {
+        basemul(c->coeffs + 2 * i, a->coeffs + 2 * i, b->coeffs + 2 * i,
+            zetas_base[i]);
     }
-    poly_reduce(c);
+    // poly_reduce(c);
 }
 
 void poly_sample_3(poly* r, const unsigned char* seed, unsigned char nonce)
