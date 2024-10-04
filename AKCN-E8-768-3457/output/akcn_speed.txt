@@ -3,22 +3,22 @@ SECRETKEYBYTES: 2400
 CIPHERTEXTBYTES: 1280
 CRYPTO_BYTES: 32
 poly_ntt: 
-median: 16561 cycles/ticks
-average: 16905 cycles/ticks
+median: 16693 cycles/ticks
+average: 16909 cycles/ticks
 
 poly_invntt: 
-median: 20543 cycles/ticks
-average: 20792 cycles/ticks
+median: 20567 cycles/ticks
+average: 20648 cycles/ticks
 
 keypair: 
-median: 95821 cycles/ticks
-average: 104528 cycles/ticks
+median: 89278 cycles/ticks
+average: 94091 cycles/ticks
 
 encaps: 
-median: 145574 cycles/ticks
-average: 159866 cycles/ticks
+median: 138841 cycles/ticks
+average: 151517 cycles/ticks
 
 decaps: 
-median: 194120 cycles/ticks
-average: 207640 cycles/ticks
+median: 186678 cycles/ticks
+average: 193127 cycles/ticks
 

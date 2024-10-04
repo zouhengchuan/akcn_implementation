@@ -4,20 +4,16 @@
 
 int16_t montgomery_reduce(int32_t a)
 {
-    int32_t t;
-    int16_t u;
+    int16_t t;
 
-    u = a * QINV;
-    t = (int32_t)u * Q;
-    t = a - t;
-    t >>= 16;
+    t = (int16_t)a * QINV;
+    t = (a - (int32_t)t * Q) >> 16;
     return t;
 }
 
 int16_t barrett_reduce(int16_t a)
 {
     int32_t t;
-    const int32_t v = (1U << 26) / Q + 1;
 
     t = v * a;
     t >>= 26;
