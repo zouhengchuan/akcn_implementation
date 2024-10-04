@@ -8,50 +8,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-
+#define QINV 12929 // q^(-1) mod 2^16
 #define Q 3457
 
-static uint16_t coeff_freeze(uint16_t x)
+int16_t montgomery_reduce(int32_t a)
 {
-    uint16_t m, r;
-    int16_t c;
-    r = x % Q;
+    int32_t t;
+    int16_t u;
 
-    m = r - Q;
-    c = m;
-    c >>= 15;
-    r = m ^ ((r ^ m) & c);
-
-    return r;
+    u = a * QINV;
+    t = (int32_t)u * Q;
+    t = a - t;
+    t >>= 16;
+    return t;
 }
 
 int main()
 {
-    int16_t a[2] = {2156, 555};
-    printf("a0 = %02X\n", a[0]);
-    printf("a1 = %02X\n", a[1]);
-
-    uint16_t t[2];
-    unsigned char r[3];
-
-    t[0] = coeff_freeze(a[0]);
-    t[1] = coeff_freeze(a[1]);
-    printf("t0 = %02X\n", t[0]);
-    printf("t1 = %02X\n", t[1]);
-
-    r[0] = (t[0])      & 0xff;
-    r[1] = (t[0] >> 8) | ((t[1] & 0x0f) << 4);
-    r[2] = (t[1] >> 4);
-
-    for (int i = 0; i < 3; i++){
-        printf("r = %02X\n", r[i]);
+    int32_t a = 3456;
+    int16_t b;
+    int ctr = 0;
+    for (int i = 1; i < 1 * 3457; i++){
+        b = montgomery_reduce(i);
+        if (b != (b + 3457) % 3457){
+            printf("b = %d ", b);
+            printf("i = %d\n", i);
+            ctr++;
+        }
     }
-
-    int16_t b[2];
-    b[0] = (r[0])      | (((uint16_t)r[1] & 0x0f) << 8);
-    b[1] = (r[1] >> 4) | (((uint16_t)r[2]       ) << 4);
-    printf("b0 = %02X\n", b[0]);
-    printf("b1 = %02X\n", b[1]);
+    printf("%d\n", ctr);
     
     return 0;
 }
