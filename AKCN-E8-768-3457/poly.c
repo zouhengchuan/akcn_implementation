@@ -358,13 +358,13 @@ void poly_frommsg(poly *r, const unsigned char *msg)
 {
     int i;
     uint16_t currbit;
-    uint8_t exkey[128];
+    uint8_t exkey[96];
 
-    for (i = 0;i < 128;i++) {
+    for (i = 0;i < 96;i++) {
         uint8_t m = (msg[i>>1] >> ((i&1)<<2)) & 0xF;
         exkey[i] = encode_hamming(m);
     }
-    for (i = 0;i < N;i++) {
+    for (i = 0; i < N; i++) {
         currbit = (exkey[i>>3] >> (i & 0x7)) & 1;
         r->coeffs[i] = (Q>>1) & (-currbit);
     }
@@ -374,11 +374,11 @@ void poly_tomsg(unsigned char *msg, const poly *x)
 {
   unsigned int i, j, k;
 
-  for (i = 0;i < 32;i++) {
+  for (i = 0;i < 48;i++) {
     msg[i] = 0;
   }
 
-  for(i = 0;i < 64;i++) {
+  for(i = 0;i < 96;i++) {
     uint32_t tmp_v[8];
     for (j = 0;j < 8;j++) {
       k = (i<<3) | j;
