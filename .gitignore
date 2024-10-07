@@ -1,5 +1,5 @@
 *~
-.swp
-.txt
-.req
-.rsp
+*.swp
+*.txt
+*.req
+*.rsp
