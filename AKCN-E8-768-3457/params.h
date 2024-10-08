@@ -7,8 +7,8 @@
 #define COMPRESSEDY 10
 #define COMPRESSEDV 3
 
-#define SYMBYTES 32
-#define SSBYTES  48
+#define SYMBYTES 40
+#define PREFIX (SYMBYTES + 1)
 #define POLYBYTES ((LOGQ*N)/8)  // 1152
 #define POLYYBYTES    ((COMPRESSEDY*N)/8) // 960
 #define POLYVBYTES    ((COMPRESSEDV*N)/8) // 288

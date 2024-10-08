@@ -24,20 +24,23 @@ int crypto_kem_keypair(unsigned char* pk, unsigned char* sk)
 
 int crypto_kem_enc(unsigned char* ct, unsigned char* ss, const unsigned char* pk)
 {
-    unsigned char m[SYMBYTES + SSBYTES];
-    unsigned char buf[SSBYTES + SYMBYTES];
+    unsigned char m[PREFIX + SYMBYTES];
+    unsigned char buf[2 * SYMBYTES];
     int i;
 
     randombytes(buf, SYMBYTES);
 
-    shake256(m + SYMBYTES, SSBYTES, buf, SYMBYTES);
-    for (i = 0; i < SYMBYTES; i++)
+    shake256(m + PREFIX, SYMBYTES, buf, SYMBYTES);
+
+    for (i = 0; i < PREFIX; i++)
         m[i] = pk[i];
 
-    shake256(buf, SSBYTES + SYMBYTES, m, SYMBYTES + SSBYTES);
+    shake256(buf, 2 * SYMBYTES, m, PREFIX + SYMBYTES);
 
-    cpapke_enc(ct, m + SYMBYTES, pk, buf + SSBYTES);
-    for (i = 0; i < SSBYTES; i++){
+    shake256(buf + SYMBYTES, SYMBYTES, buf + SYMBYTES, SYMBYTES);
+
+    cpapke_enc(ct, m + PREFIX, pk, buf + SYMBYTES);
+    for (i = 0; i < SYMBYTES; i++){
         ss[i] = buf[i];
     }
 
@@ -47,31 +50,38 @@ int crypto_kem_enc(unsigned char* ct, unsigned char* ss, const unsigned char* pk
 int crypto_kem_dec(unsigned char* ss, const unsigned char* ct, const unsigned char* sk)
 {
     int i, fail;
-    unsigned char ct2[CCAKEM_CIPHERTEXTBYTES];
-    unsigned char buf[SSBYTES + SYMBYTES];
-    unsigned char m[SYMBYTES + SSBYTES];
-    unsigned char rj[CCAKEM_PUBLICKEYBYTES + SYMBYTES + CCAKEM_CIPHERTEXTBYTES];
+    unsigned char ct2[CCAKEM_CIPHERTEXTBYTES + SYMBYTES];
+    unsigned char buf[2 * SYMBYTES];
+    unsigned char m[PREFIX + SYMBYTES];
     const unsigned char* pk = sk + CPAPKE_SECRETKEYBYTES;
 
-    cpapke_dec(m + SYMBYTES, ct, sk);
+    cpapke_dec(m + PREFIX, ct, sk);
 
-    for (i = 0; i < SYMBYTES; i++)
+    for (i = 0; i < PREFIX; i++)
         m[i] = pk[i];
     
-    shake256(buf, SSBYTES + SYMBYTES, m, SYMBYTES + SSBYTES);
+    shake256(buf, 2 * SYMBYTES, m, PREFIX + SYMBYTES);
 
-    cpapke_enc(ct2, m + SYMBYTES, pk, buf + SSBYTES);
+    shake256(buf + SYMBYTES, SYMBYTES, buf + SYMBYTES, SYMBYTES);
+
+    cpapke_enc(ct2, m + PREFIX, pk, buf + SYMBYTES);
 
     fail = verify(ct, ct2, CCAKEM_CIPHERTEXTBYTES);
 
-    cmov(ss, buf, SSBYTES, 1);
+    cmov(ss, buf, SYMBYTES, 1);
 
-    cmov(rj, pk, CCAKEM_PUBLICKEYBYTES, 1);
-    cmov(rj, sk + CPAPKE_SECRETKEYBYTES + CPAPKE_PUBLICKEYBYTES, SSBYTES, 1);
-    cmov(rj, ct, CCAKEM_CIPHERTEXTBYTES, 1);
-    shake256(rj, SSBYTES, rj, CCAKEM_PUBLICKEYBYTES + SYMBYTES + CCAKEM_CIPHERTEXTBYTES);
+    for(i = 0; i < CCAKEM_CIPHERTEXTBYTES; ++i)
+    {
+        ct2[i] = ct[i];
+    }
+    for(i = 0; i < SYMBYTES; ++i)
+    {
+        ct2[i + CCAKEM_CIPHERTEXTBYTES] = sk[i + CPAPKE_SECRETKEYBYTES + CPAPKE_PUBLICKEYBYTES];
+    }
 
-    cmov(ss, rj, SSBYTES, fail);
+    shake256(buf, SYMBYTES, ct2, SYMBYTES + CCAKEM_CIPHERTEXTBYTES);
+
+    cmov(ss, buf, SYMBYTES, fail);
 
     return 0;
 }
